@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Posts on Mircea Ulinic</title><link>http://localhost:1313/posts/</link><description>Recent content in Posts on Mircea Ulinic</description><generator>Hugo</generator><language>en-gb</language><lastBuildDate>Thu, 15 Jan 2026 00:00:00 +0000</lastBuildDate><atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml"/><item><title>Latency Monitor: lightweight tool for TCP and UDP monitoring</title><link>http://localhost:1313/2026-01-15-latency-monitor/</link><pubDate>Thu, 15 Jan 2026 00:00:00 +0000</pubDate><guid>http://localhost:1313/2026-01-15-latency-monitor/</guid><description>&lt;p&gt;&lt;strong&gt;TL;DR&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;latency-monitor&lt;/code&gt; measures real application-like latency over TCP and UDP&lt;/li&gt;
+&lt;li&gt;Supports one-way delay (OWD), not just RTT&lt;/li&gt;
+&lt;li&gt;Works over established TCP connections&lt;/li&gt;
+&lt;li&gt;Designed for high-frequency, continuous probing&lt;/li&gt;
+&lt;li&gt;Requires time-synchronised endpoints (NTP/PTP)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I needed a way to monitor the behaviour of connections between various endpoints over TCP and UDP. “Just run a ping”
+rarely works because in real networks, it rarely measures what actually matters.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Most of the applications are either using TCP or UDP, whereas &amp;ldquo;ping&amp;rdquo; most often means ICMP which is neither of those.
+So ping won&amp;rsquo;t help you debug anything in reality. Or, at least, not much.&lt;/li&gt;
+&lt;li&gt;To have a solid understanding of what&amp;rsquo;s happening you need data, a lot of data. Depending on the nature of your
+environment, you may need very granular data points to capture short-timed events or micro-bursts. You can only capture
+these if you&amp;rsquo;re monitoring continuously.&lt;/li&gt;
+&lt;li&gt;Many applications are designed to establish a TCP connection, maintain that state and exchange data. If you don&amp;rsquo;t
+reproduce that in your monitoring, you won&amp;rsquo;t be able to appropriately evaluate the network state for its actual
+production scenarios. In other words, you need a tool that monitors your network over an established TCP connection,
+as opposed to a tool that creates a separate TCP connection for every probe.&lt;/li&gt;
+&lt;li&gt;The return path may not always be the same (i.e., from A to B your packets may take one route, but from B back to A,
+it may take a different route). This is where unidirectional per-segment monitoring makes a huge difference.&lt;/li&gt;
+&lt;li&gt;Size matters. At least when it comes to payload. A connection between point A and B may behave differently depending
+on the packet size. Particularly for UDP.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I&amp;rsquo;m going to refer back to these points throughout this article. With these in mind, I needed a tool that satisfied the
+following requirements:&lt;/p&gt;</description></item><item><title>APNIC course on Network Automation</title><link>http://localhost:1313/2024-04-11-apnic-network-automation/</link><pubDate>Thu, 11 Apr 2024 00:00:00 +0100</pubDate><guid>http://localhost:1313/2024-04-11-apnic-network-automation/</guid><description>&lt;p&gt;From the very beginning, when I first introduced Salt to the network automation
+community, one of my dreams was to create a course.&lt;/p&gt;
+&lt;p&gt;Back in 2017, together with my friend Seth House, we managed to publish a small
+booklet with O&amp;rsquo;Reilly, which you can still download for free at
+&lt;a href="https://www.oreilly.com/library/view/network-automation-at/9781491992524/"&gt;https://www.oreilly.com/library/view/network-automation-at/9781491992524/&lt;/a&gt; (or
+directly from &lt;a href="https://www.cloudflare.com/resources/assets/slt3lc6tev37/2UixizjqVh3v7L9yhcJWMT/87c1175735d490221147e1ad5866d909/network-automation-at-scale.pdf"&gt;Cloudflare&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;Along the way, many things happened, including COVID-19, which significantly
+impacted our lives and my personal plans.&lt;/p&gt;
+&lt;p&gt;In fact, the idea of an automation course began in 2019 when &lt;a href="https://blog.apnic.net/author/tashi-phuntsho/"&gt;Tashi
+Phuntsho&lt;/a&gt; from APNIC proposed
+collaboration. As everyone knows, APNIC has been providing high-quality
+workshops and courses for a long time, so I couldn&amp;rsquo;t have been more excited and
+privileged about this opportunity. They have the experience and resources
+(time, human, and financial) that I don&amp;rsquo;t have.&lt;/p&gt;</description></item><item><title>A (Proxy) Minion-less Approach to Network Automation using Salt</title><link>http://localhost:1313/2019-06-17-minionless-salt-automation/</link><pubDate>Mon, 17 Jun 2019 00:00:00 +0100</pubDate><guid>http://localhost:1313/2019-06-17-minionless-salt-automation/</guid><description>&lt;script type="application/ld+json"&gt;
+{
+"@context": "https://schema.org",
+"@type": "NewsArticle",
+"mainEntityOfPage": {
+"@type": "WebPage",
+"@id": "https://mirceaulinic.net/2019-06-17-minionless-salt-automation/"
+},
+"headline": "A (Proxy) Minion-less Approach to Network Automation using Salt",
+"datePublished": "2019-06-17T08:10:00+00:00",
+"dateModified": "2019-07-17T08:10:00+00:00",
+"author": {
+"@type": "Person",
+"name": "Mircea Ulinic"
+},
+"publisher": {
+"@type": "Organization",
+"name": "Mircea Ulinic",
+"logo": {
+"@type": "ImageObject",
+"url": "https://mirceaulinic.net/img/avatar-icon.png"
+}
+},
+"description": "A (Proxy) Minion-less Approach to Network Automation using Salt"
+}
+&lt;/script&gt;
+&lt;p&gt;Salt is currently one of the largely adopted automating frameworks, and perhaps
+one of the most complete and flexible. But these - including support for
+several architectures, large cardinal of native capabilities and features,
+ability to easily extend it in your own environment, and so on - come with a
+cost. The cost is setting up and maintaining an infrastructure to facilitate and
+leverage these capabilities.&lt;/p&gt;</description></item><item><title>Extending NAPALM's capabilities in the Salt environment</title><link>http://localhost:1313/2019-04-24-extending-napalm-salt/</link><pubDate>Wed, 24 Apr 2019 00:00:00 +0100</pubDate><guid>http://localhost:1313/2019-04-24-extending-napalm-salt/</guid><description>Python development for infrastructure management using Salt</description></item><item><title>Do we really need network automation?</title><link>http://localhost:1313/2019-01-09-do-we-need-network-automation/</link><pubDate>Wed, 09 Jan 2019 00:00:00 +0000</pubDate><guid>http://localhost:1313/2019-01-09-do-we-need-network-automation/</guid><description>&lt;p&gt;In my mind, especially after seeing how automation massively helped one of the
+largest global networks (Cloudflare - my current employer), I simply cannot
+conceive that a network can possibly run reliably without a form of automation.
+However, there still are plenty of examples of networks running (often with
+major outages) without any automation at all, yet reluctant to start adopting
+automation methodologies.&lt;/p&gt;
+&lt;p&gt;I have debated the subject at many conferences and meet-ups, and I heard a
+variety of weak arguments against automation, or a form of anxiety caused by
+false assumptions.&lt;/p&gt;</description></item><item><title>Network automation using Salt for large scale deployments</title><link>http://localhost:1313/2018-09-27-network-automation-at-scale/</link><pubDate>Thu, 27 Sep 2018 00:00:00 +0100</pubDate><guid>http://localhost:1313/2018-09-27-network-automation-at-scale/</guid><description>&lt;p&gt;Very often I refer to Salt as one of the most suitable tools for managing large
+scale deployment - either servers or network devices, but not limited to.
+While on a server one can install the regular Minion directly, and there are
+already many well known success stories in the industry, unfortunately, we don&amp;rsquo;t
+have the same flexibility on traditional network gear, as the network operating
+systems are generally extremely limited (to the end user) and closed.&lt;/p&gt;</description></item><item><title>Getting started with Salt for network automation, using Docker</title><link>http://localhost:1313/2018-04-04-salt-network-automation-docker-quickstart/</link><pubDate>Wed, 04 Apr 2018 00:00:00 +0100</pubDate><guid>http://localhost:1313/2018-04-04-salt-network-automation-docker-quickstart/</guid><description>The easy way</description></item><item><title>Running Salt Proxy Minions on OpenBSD</title><link>http://localhost:1313/2018-02-14-openbsd-salt-proxy/</link><pubDate>Wed, 14 Feb 2018 00:00:00 +0000</pubDate><guid>http://localhost:1313/2018-02-14-openbsd-salt-proxy/</guid><description>The beginning of the OpenBSD era</description></item><item><title>Python development for infrastructure management using Salt</title><link>http://localhost:1313/2017-12-19-salt-pure-python/</link><pubDate>Tue, 19 Dec 2017 00:00:00 +0000</pubDate><guid>http://localhost:1313/2017-12-19-salt-pure-python/</guid><description>The overlooked side of Salt and some best practices</description></item><item><title>Event-driven network automation</title><link>http://localhost:1313/2017-10-19-event-driven-network-automation/</link><pubDate>Thu, 19 Oct 2017 00:00:00 +0100</pubDate><guid>http://localhost:1313/2017-10-19-event-driven-network-automation/</guid><description>Using napalm-logs and Salt</description></item><item><title>Installing NAPALM using Salt</title><link>http://localhost:1313/2017-07-06-napalm-install-formula/</link><pubDate>Thu, 06 Jul 2017 00:00:00 +0100</pubDate><guid>http://localhost:1313/2017-07-06-napalm-install-formula/</guid><description>The easy way</description></item><item><title>Chatops using Salt and NAPALM</title><link>http://localhost:1313/2017-05-24-salt-napalm-chatops/</link><pubDate>Wed, 24 May 2017 00:00:00 +0100</pubDate><guid>http://localhost:1313/2017-05-24-salt-napalm-chatops/</guid><description>Network orchestration with Salt and NAPALM - Part 3</description></item><item><title>Cisco IOS-XR: the buggy XML API</title><link>http://localhost:1313/2017-04-14-cisco-xr-xml-agent-fun/</link><pubDate>Fri, 14 Apr 2017 00:00:00 +0100</pubDate><guid>http://localhost:1313/2017-04-14-cisco-xr-xml-agent-fun/</guid><description>And how Cisco does not give a damn</description></item><item><title>Installing SaltStack and NAPALM</title><link>http://localhost:1313/2017-03-14-install-saltstack/</link><pubDate>Tue, 14 Mar 2017 00:00:00 +0000</pubDate><guid>http://localhost:1313/2017-03-14-install-saltstack/</guid><description>&lt;p&gt;During the live session of the &lt;a href="https://mirceaulinic.net/2017-02-14-network-automation-tutorial/"&gt;NANOG tutorial&lt;/a&gt;, I have expanded on the installation side. However, among the feedback received from the readers that have been following the slides, people suggested that I should have included more details. This is why today I am going to provide more information for these topics: how to install the tools a network engineer requires to start automating.&lt;/p&gt;
+&lt;h2 id="install-napalm"&gt;Install NAPALM&lt;/h2&gt;
+&lt;p&gt;NAPALM is available on &lt;a href="https://pypi.python.org/pypi"&gt;PyPI&lt;/a&gt; (Python Package Index) which is the official repository for third-party Python libraries.&lt;/p&gt;</description></item><item><title>Network automation at scale</title><link>http://localhost:1313/2017-02-14-network-automation-tutorial/</link><pubDate>Tue, 14 Feb 2017 00:00:00 +0000</pubDate><guid>http://localhost:1313/2017-02-14-network-automation-tutorial/</guid><description>Up and running in 60 minutes</description></item><item><title>Configuration management</title><link>http://localhost:1313/2016-12-15-configuration-management/</link><pubDate>Thu, 15 Dec 2016 00:00:00 +0000</pubDate><guid>http://localhost:1313/2016-12-15-configuration-management/</guid><description>Network orchestration with Salt and NAPALM - Part 2</description></item><item><title>Salt 2016.11.0 (Carbon) released</title><link>http://localhost:1313/2016-11-30-salt-carbon-released/</link><pubDate>Wed, 30 Nov 2016 00:00:00 +0000</pubDate><guid>http://localhost:1313/2016-11-30-salt-carbon-released/</guid><description>&lt;p&gt;The wait is over, NAPALM is finally fully integrated in an automation framework. Beginning with 2016.11 (Carbon), all the NAPALM features are integrated in the core of Salt - more details in the &lt;a href="https://docs.saltstack.com/en/develop/topics/releases/2016.11.0.html#network-automation-napalm"&gt;release notes&lt;/a&gt;. That means, when you install Salt you have by default the network automation features included!&lt;/p&gt;
+&lt;h2 id="why-is-this-so-important"&gt;Why is this so important?&lt;/h2&gt;
+&lt;p&gt;This is the result of 11 months of assiduous work and contributions to both NAPALM and Salt projects. Basically after less than one year, the network engineers finally have something they can just use without geting lost in complex setups that require deeper software knowledge - only two simple steps required: 1. Install &amp;amp; 2. Use.&lt;/p&gt;</description></item><item><title>Network orchestration with Salt and NAPALM</title><link>http://localhost:1313/2016-11-17-network-orchestration-with-salt-and-napalm/</link><pubDate>Thu, 17 Nov 2016 00:00:00 +0000</pubDate><guid>http://localhost:1313/2016-11-17-network-orchestration-with-salt-and-napalm/</guid><description>Because rendering templates is simply not enough</description></item></channel></rss>

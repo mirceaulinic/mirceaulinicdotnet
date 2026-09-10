@@ -1,0 +1,102 @@
+baseURL: "https://mirceaulinic.net/"
+languageCode: "en-gb"
+title: "Mircea Ulinic"
+theme: "PaperMod"
+timeZone: "Europe/London"
+
+enableRobotsTXT: true
+enableGitInfo: true
+
+pagination:
+  pagerSize: 10
+
+permalinks:
+  posts: "/:year-:month-:day-:slug/"
+
+taxonomies:
+  tag: tags
+  category: categories
+
+params:
+  env: production
+  description: "Network automation, infrastructure and distributed systems."
+  author: "Mircea Ulinic"
+
+  defaultTheme: auto
+  disableThemeToggle: false
+  ShowReadingTime: true
+  ShowShareButtons: false
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowRssButtonInSectionTermList: true
+  ShowToc: true
+  TocOpen: false
+  UseHugoToc: true
+
+  homeInfoParams:
+    Title: "Mircea Ulinic"
+    Content: |
+      Network automation, infrastructure and distributed systems.
+
+      I write about networking, automation, cloud infrastructure, observability, and the lessons learned from building and operating systems at scale.
+
+  socialIcons:
+    - name: github
+      url: "https://github.com/mirceaulinic"
+    - name: linkedin
+      url: "https://www.linkedin.com/in/mirceaulinic/"
+    - name: rss
+      url: "/index.xml"
+
+  assets:
+    disableHLJS: false
+    disableFingerprinting: false
+
+  cover:
+    linkFullImages: true
+    responsiveImages: true
+    hidden: false
+
+  editPost:
+    URL: "https://github.com/mirceaulinic/mirceaulinic.github.io/edit/main/"
+    Text: "Suggest an edit"
+    appendFilePath: true
+
+menu:
+  main:
+    - identifier: posts
+      name: Posts
+      url: /posts/
+      weight: 10
+    - identifier: projects
+      name: Projects
+      url: /projects/
+      weight: 20
+    - identifier: about
+      name: About
+      url: /about/
+      weight: 30
+    - identifier: github
+      name: GitHub
+      url: https://github.com/mirceaulinic
+      weight: 40
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+    lineNos: false
+    codeFences: true
+    guessSyntax: true
+
+minify:
+  minifyOutput: true

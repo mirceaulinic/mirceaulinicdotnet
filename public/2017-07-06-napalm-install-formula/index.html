@@ -1,0 +1,252 @@
+<!doctype html><html lang=en dir=auto data-theme=auto><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name=robots content="index, follow"><title>Installing NAPALM using Salt | Mircea Ulinic</title><meta name=keywords content><meta name=description content="The easy way"><meta name=author content="Mircea Ulinic"><link rel=canonical href=http://localhost:1313/2017-07-06-napalm-install-formula/><link crossorigin=anonymous href=/assets/css/stylesheet.0ace8e18147d73bd26fca2454ce459c5cbe90ed65109eb9c04eefed5f7fd97e4.css integrity="sha256-Cs6OGBR9c70m/KJFTORZxcvpDtZRCeucBO7+1ff9l+Q=" rel="preload stylesheet" as=style><link rel=icon href=http://localhost:1313/favicon.ico><link rel=icon type=image/png sizes=16x16 href=http://localhost:1313/favicon-16x16.png><link rel=icon type=image/png sizes=32x32 href=http://localhost:1313/favicon-32x32.png><link rel=apple-touch-icon href=http://localhost:1313/apple-touch-icon.png><link rel=mask-icon href=http://localhost:1313/safari-pinned-tab.svg><meta name=theme-color content="#2e2e33"><meta name=msapplication-TileColor content="#2e2e33"><link rel=alternate hreflang=en href=http://localhost:1313/2017-07-06-napalm-install-formula/><noscript><style>#theme-toggle,.top-link{display:none}</style><style>@media(prefers-color-scheme:dark){:root{--theme:rgb(29, 30, 32);--entry:rgb(46, 46, 51);--primary:rgb(218, 218, 219);--secondary:rgb(155, 156, 157);--tertiary:rgb(65, 66, 68);--content:rgb(196, 196, 197);--code-block-bg:rgb(46, 46, 51);--code-bg:rgb(55, 56, 62);--border:rgb(51, 51, 51);color-scheme:dark}.list{background:var(--theme)}.toc{background:var(--entry)}}</style></noscript><script>localStorage.getItem("pref-theme")==="dark"?document.querySelector("html").dataset.theme="dark":localStorage.getItem("pref-theme")==="light"?document.querySelector("html").dataset.theme="light":window.matchMedia("(prefers-color-scheme: dark)").matches?document.querySelector("html").dataset.theme="dark":document.querySelector("html").dataset.theme="light"</script><meta property="og:url" content="http://localhost:1313/2017-07-06-napalm-install-formula/"><meta property="og:site_name" content="Mircea Ulinic"><meta property="og:title" content="Installing NAPALM using Salt"><meta property="og:description" content="The easy way"><meta property="og:locale" content="en_gb"><meta property="og:type" content="article"><meta property="article:section" content="posts"><meta property="article:published_time" content="2017-07-06T00:00:00+01:00"><meta property="article:modified_time" content="2017-07-06T00:00:00+01:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Installing NAPALM using Salt"><meta name=twitter:description content="The easy way"><script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Posts","item":"http://localhost:1313/posts/"},{"@type":"ListItem","position":2,"name":"Installing NAPALM using Salt","item":"http://localhost:1313/2017-07-06-napalm-install-formula/"}]}</script><script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"Installing NAPALM using Salt","name":"Installing NAPALM using Salt","description":"The easy way","keywords":[],"articleBody":"In one of my previous posts, I have presented how to install NAPALM and Salt. While Salt can be installed directly from the SaltStack Repo, very easy, using Salt Bootstrap, NAPALM requires more steps and there are a few system dependencies you may need to consider. For Salt users there’s an easier way to get everything installed using one simple command.\nSalt Formulas Formulas are pre-written Salt States, provided by the Salt community. There are plenty of formulas available unde the SaltStack Formulas GitHub organization. Their installation is easy, well explained in detail here: https://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html. Basically all you need to do is write your pillar as specified in the formula; each formula has also a pillar.example file to help with a structure example for the pillar.\nFor NAPALM users, there’s a new Salt formula: napalm-install-formula. Using this formula, we can install the system packages very easily, in addition to the PyPi requirements for the NAPALM drivers. This is also a great way to keep your environment updated, by executing a command as simple as salt-call state.sls napalm_install (I will explain below).\nRegular minions and proxy minions The major difference between regular minions and proxy minions is that the latter are just one process (per network device managed), able to run from everywhere, as long as they are able to contact the Salt master. To use the napalm-install-formula, you need to run the salt-minion on the same machine where you have the proxy minion(s), connected eventually to the same Salt master. This does not bring an extra dependency, the salt-proxy binary is anyway included in the salt-minion package; in other words, to be able to run proxy minions, you have already installed the salt-minion, but it might not be used.\nWe will need to start the Salt minion, as this is the process managing our server, while the proxy minions manage our network devices.\nConfigure and start the salt-minion The regular minion is very simple to be started, less complicated than the proxy:\nSpecify the host of the Salt master in the minion configuration file (typically /etc/salt/minion or /srv/minion), under the configuration field master. In this example, my minion connects to the Salt master running on the same host (in my lab, I run the proxy minions on the same physical machine as the master): master: localhost Start the minion process: $ sudo systemctl start salt-minion Check the unaccepted keys: $ sudo salt-key -L Accepted Keys: csr1 device1 device2 nxos-spine1 vmx1 Denied Keys: Unaccepted Keys: eos ip-172-31-11-15 Rejected Keys: We can notice that the minion ip-172-31-11-15 is not accepted yet by the master. Accept the key: $ sudo salt-key -a ip-172-31-11-15.\nIn the following examples, ip-172-31-11-15 is the minion ID of the Salt minion that manages the server where the proxies run.\nConfigure the napalm-install-formula The pillar has the following structure: /etc/salt/pillar/napalm.sls\nnapalm: install: - napalm-iosxr - napalm-junos Where we can list the NAPALM drivers we need. To install the complete library, with all the possible drivers, you can simply list napalm.\nMap the napalm.sls pillar defined above to the Salt regular minion, idendified by its ID: /etc/salt/pillar/top.sls\nbase: 'ip-172-31-11-15': - napalm Refresh pillar on the local minion: $ sudo salt-call saltutil.refresh_pillar local: True The previous command is executed from the Salt minion server. When executing from the master side, the equivalent command is: $ sudo salt 'ip-172-31-11-15' saltutil.refresh_pillar.\nCheck that the minion has the right data: $ sudo salt-call pillar.get napalm:install local: - napalm-junos - napalm-iosxr If you have installed the napalm-install-formula correctly, you should be able to execute: $ sudo salt-call state.show_sls napalm_install. Otherwise, make sure you have the map.jinja and init.sls in a directory called napalm_install, under one of the paths listed as file_roots in the master configuration.\nExecute a dry run and check the output (this step is not mandatory, but it is a good practice):\n$ sudo salt-call state.sls napalm_install test=True local: ---------- ID: install_napalm_junos_pkgs Function: pkg.installed Result: None Comment: The following packages would be installed/updated: libssl-dev, python-cffi, libxslt1-dev, libffi-dev, python-dev Started: 11:45:03.200592 Duration: 332.72 ms Changes: ---------- ID: napalm-junos Function: pip.installed Result: None Comment: Python package napalm-junos is set to be installed Started: 11:45:03.775327 Duration: 974.406 ms Changes: ---------- ID: install_napalm_iosxr_pkgs Function: pkg.installed Result: None Comment: The following packages would be installed/updated: libssl-dev, python-cffi, python-dev, libffi-dev Started: 11:45:04.749919 Duration: 9.268 ms Changes: ---------- ID: napalm-iosxr Function: pip.installed Result: None Comment: Python package napalm-iosxr is set to be installed Started: 11:45:04.759294 Duration: 957.672 ms Changes: Summary for local ------------ Succeeded: 4 (unchanged=4) Failed: 0 ------------ Total states run: 4 Total run time: 2.274 s The test mode tells us that there are several system packages to be installed, including libxslt1-dev, libssl-dev together with the NAPALM libraries from PyPi, using pip. As everything looks good, we can go ahead and install:\n$ sudo salt-call state.sls napalm_install local: ---------- ID: install_napalm_junos_pkgs Function: pkg.installed Result: True Comment: 5 targeted packages were installed/updated. The following packages were already installed: python-pip, libxml2-dev Started: 11:47:43.398503 Duration: 6123.864 ms Changes: ---------- libffi-dev: ---------- new: 3.1-2+deb8u1 old: libffi6: ---------- new: 3.1-2+deb8u1 old: 3.1-2+b2 libssl-dev: ---------- new: 1.0.1t-1+deb8u6 old: libxslt-dev: ---------- new: 1 old: libxslt1-dev: ---------- new: 1.1.28-2+deb8u3 old: python-cffi: ---------- new: 0.8.6-1 old: python-dev: ---------- new: 2.7.9-1 old: python-dev:any: ---------- new: 1 old: ---------- ID: napalm-junos Function: pip.installed Result: True Comment: All packages were successfully installed Started: 11:47:50.485667 Duration: 2536.705 ms Changes: ---------- napalm-junos==0.11.0: Installed ---------- ID: install_napalm_iosxr_pkgs Function: pkg.installed Result: True Comment: All specified packages are already installed Started: 11:47:53.023603 Duration: 4.962 ms Changes: ---------- ID: napalm-iosxr Function: pip.installed Result: True Comment: All packages were successfully installed Started: 11:47:53.028663 Duration: 4820.892 ms Changes: ---------- napalm-iosxr==0.5.1: Installed Summary for local ------------ Succeeded: 4 (changed=2) Failed: 0 ------------ Total states run: 4 Total run time: 13.486 s The state execution correctly setup the environment for NAPALM and upgraded the system dependencies to the latest releases.\nFrom here on, if we need to install another NAPALM driver, but we are unsure about its dependencies, we can simply append it to the install list (in the napalm.sls pillar), e.g.:\nnapalm: install: - napalm-junos - napalm-iosxr - napalm-panos Then execute the state:\n$ sudo salt-call state.sls napalm_install local: ---------- ID: install_napalm_junos_pkgs Function: pkg.installed Result: True Comment: All specified packages are already installed Started: 11:52:17.193931 Duration: 323.716 ms Changes: ---------- ID: napalm-junos Function: pip.installed Result: True Comment: Python package napalm-junos was already installed All packages were successfully installed Started: 11:52:17.758566 Duration: 2528.329 ms Changes: ---------- ID: install_napalm_iosxr_pkgs Function: pkg.installed Result: True Comment: All specified packages are already installed Started: 11:52:20.287092 Duration: 5.199 ms Changes: ---------- ID: napalm-iosxr Function: pip.installed Result: True Comment: Python package napalm-iosxr was already installed All packages were successfully installed Started: 11:52:20.292391 Duration: 1452.512 ms Changes: ---------- ID: install_napalm_panos_pkgs Function: pkg.installed Result: True Comment: All specified packages are already installed Started: 11:52:21.745097 Duration: 5.286 ms Changes: ---------- ID: napalm-panos Function: pip.installed Result: True Comment: All packages were successfully installed Started: 11:52:21.750481 Duration: 4880.599 ms Changes: ---------- napalm-panos==0.4.0: Installed Summary for local ------------ Succeeded: 6 (changed=1) Failed: 0 ------------ Total states run: 6 Total run time: 9.196 s If you are running a large scale network and your proxy minions are distributed across multiple servers, the dependencies installation becomes very stright forward:\n$ sudo salt -N proxy-minions-servers state.sls napalm_install Where proxy-minions-servers is a node group defined on the master, selecting the servers running the proxy processes.\nEnsure you are running the latest versions Using the Salt schedule subsystem, we can ensure the environment is always up to date, by scheduling the state to be executed at specific intervals. For example, the following minion configuration schedules the napalm_install state to be executed every Monday, at 10AM:\nschedule: napalm_env: function: state.sls arg: - napalm_install when: - Monday 10:00am Conclusions Although there are some additional steps to get the formula up and running, on the long run this method will turn to be very handy and a good way to maintain your environment updated. In the NAPALM community, we have agreed to release bugfixes and feature releases as often as possible, so most of the time upgrading to the latest version will probably help. So why not use the Salt schedule to execute the napalm_install state periodically and ensure your environment is always running the latest versions.\n","wordCount":"1367","inLanguage":"en","datePublished":"2017-07-06T00:00:00+01:00","dateModified":"2017-07-06T00:00:00+01:00","author":{"@type":"Person","name":"Mircea Ulinic"},"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:1313/2017-07-06-napalm-install-formula/"},"publisher":{"@type":"Organization","name":"Mircea Ulinic","logo":{"@type":"ImageObject","url":"http://localhost:1313/favicon.ico"}}}</script></head><body id=top><header class=header><nav class=header-nav><div class=logo><a href=http://localhost:1313/ accesskey=h title="Mircea Ulinic (Alt + H)">Mircea Ulinic</a><div class=logo-switches><button id=theme-toggle class=theme-toggle accesskey=t title="(Alt + T)" aria-label="Toggle theme">
+<svg class="moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+<svg class="sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div><ul id=menu class=menu><li><a href=http://localhost:1313/posts/ title=Posts><span>Posts</span></a></li><li><a href=http://localhost:1313/projects/ title=Projects><span>Projects</span></a></li><li><a href=http://localhost:1313/about/ title=About><span>About</span></a></li><li><a href=https://github.com/mirceaulinic title=GitHub><span>GitHub</span>&nbsp;
+<svg fill="none" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" height="12" width="12"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a></li></ul></nav></header><main class=main><article class=post-single><header class=post-header><nav class=breadcrumbs role=navigation aria-label=Breadcrumb><a href=/>Home</a>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"/></svg>
+<a href=/posts/>Posts</a>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"/></svg></nav><h1 class="post-title entry-hint-parent">Installing NAPALM using Salt</h1><div class=post-description>The easy way</div><div class=post-meta><span title='2017-07-06 00:00:00 +0100 BST'>July 6, 2017</span>&nbsp;·&nbsp;<span>7 min</span>&nbsp;·&nbsp;<span>Mircea Ulinic</span>&nbsp;|&nbsp;<span>
+<a href=https://github.com/mirceaulinic/mirceaulinic.github.io/edit/main//posts/2017-07-06-napalm-install-formula.md rel="noopener noreferrer edit" target=_blank>Suggest an edit</a></span></div></header><details class=toc><summary accesskey=c title="(Alt + C)"><span class=title>Table of Contents</span></summary><div class=inner><nav id=TableOfContents><ul><li><a href=#salt-formulas>Salt Formulas</a></li><li><a href=#regular-minions-and-proxy-minions>Regular minions and proxy minions</a></li><li><a href=#configure-and-start-the-salt-minion>Configure and start the <code>salt-minion</code></a></li><li><a href=#configure-the-napalm-install-formula>Configure the <code>napalm-install-formula</code></a></li><li><a href=#ensure-you-are-running-the-latest-versions>Ensure you are running the latest versions</a></li><li><a href=#conclusions>Conclusions</a></li></ul></nav></div></details><div class="post-content md-content"><p>In one of my previous posts, I have presented <a href=https://mirceaulinic.net/2017-03-14-install-saltstack/>how to install NAPALM and Salt</a>. While Salt can be installed directly from the <a href=https://repo.saltstack.com/>SaltStack Repo</a>, very easy, using <a href=https://docs.saltstack.com/en/latest/topics/tutorials/salt_bootstrap.html>Salt Bootstrap</a>, NAPALM requires more steps and there are a few <a href=http://napalm.readthedocs.io/en/latest/installation/index.html#dependencies>system dependencies</a> you may need to consider. For Salt users there&rsquo;s an easier way to get everything installed using one simple command.</p><h2 id=salt-formulas>Salt Formulas<a hidden class=anchor aria-hidden=true href=#salt-formulas>#</a></h2><p>Formulas are pre-written Salt States, provided by the Salt community. There are plenty of formulas available unde the <a href=https://github.com/saltstack-formulas>SaltStack Formulas GitHub organization</a>. Their installation is easy, well explained in detail here: <a href=https://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html#installation>https://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html</a>. Basically all you need to do is write your pillar as specified in the formula; each formula has also a <code>pillar.example</code> file to help with a structure example for the pillar.</p><p>For NAPALM users, there&rsquo;s a new Salt formula: <a href=https://github.com/saltstack-formulas/napalm-install-formula>napalm-install-formula</a>. Using this formula, we can install the system packages very easily, in addition to the <code>PyPi</code> requirements for the NAPALM drivers. This is also a great way to keep your environment updated, by executing a command as simple as <code>salt-call state.sls napalm_install</code> (I will explain below).</p><h2 id=regular-minions-and-proxy-minions>Regular minions and proxy minions<a hidden class=anchor aria-hidden=true href=#regular-minions-and-proxy-minions>#</a></h2><p>The major difference between regular minions and proxy minions is that the latter are just one process (per network device managed), able to run from everywhere, as long as they are able to contact the Salt master. To use the <code>napalm-install-formula</code>, you need to run the <code>salt-minion</code> on the same machine where you have the proxy minion(s), connected eventually to the same Salt master. This does not bring an extra dependency, the <code>salt-proxy</code> binary is anyway included in the <code>salt-minion</code> package; in other words, to be able to run proxy minions, you have already installed the <code>salt-minion</code>, but it might not be used.</p><p>We will need to start the Salt minion, as this is the process managing our server, while the proxy minions manage our network devices.</p><h2 id=configure-and-start-the-salt-minion>Configure and start the <code>salt-minion</code><a hidden class=anchor aria-hidden=true href=#configure-and-start-the-salt-minion>#</a></h2><p>The regular minion is very simple to be started, less complicated than the proxy:</p><ul><li>Specify the host of the Salt master in the minion configuration file (typically <code>/etc/salt/minion</code> or <code>/srv/minion</code>), under the configuration field <code>master</code>. In this example, my minion connects to the Salt master running on the same host (in my lab, I run the proxy minions on the same physical machine as the master):</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>master</span><span class=p>:</span><span class=w> </span><span class=l>localhost</span><span class=w>
+</span></span></span></code></pre></div><ul><li>Start the minion process:</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo systemctl start salt-minion
+</span></span></code></pre></div><ul><li>Check the unaccepted keys:</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt-key -L
+</span></span><span class=line><span class=cl>Accepted Keys:
+</span></span><span class=line><span class=cl>csr1
+</span></span><span class=line><span class=cl>device1
+</span></span><span class=line><span class=cl>device2
+</span></span><span class=line><span class=cl>nxos-spine1
+</span></span><span class=line><span class=cl>vmx1
+</span></span><span class=line><span class=cl>Denied Keys:
+</span></span><span class=line><span class=cl>Unaccepted Keys:
+</span></span><span class=line><span class=cl>eos
+</span></span><span class=line><span class=cl>ip-172-31-11-15
+</span></span><span class=line><span class=cl>Rejected Keys:
+</span></span></code></pre></div><p>We can notice that the minion <code>ip-172-31-11-15</code> is not accepted yet by the master. Accept the key: <code>$ sudo salt-key -a ip-172-31-11-15</code>.</p><p>In the following examples, <code>ip-172-31-11-15</code> is the minion ID of the Salt minion that manages the server where the proxies run.</p><h2 id=configure-the-napalm-install-formula>Configure the <code>napalm-install-formula</code><a hidden class=anchor aria-hidden=true href=#configure-the-napalm-install-formula>#</a></h2><ul><li>The pillar has the following structure:</li></ul><p><code>/etc/salt/pillar/napalm.sls</code></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>napalm</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>install</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-iosxr</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-junos</span><span class=w>
+</span></span></span></code></pre></div><p>Where we can list the NAPALM drivers we need. To install the complete library, with all the possible drivers, you can simply list <code>napalm</code>.</p><ul><li>Map the <code>napalm.sls</code> pillar defined above to the Salt regular minion, idendified by its ID:</li></ul><p><code>/etc/salt/pillar/top.sls</code></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>base</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>&#39;ip-172-31-11-15&#39;</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm</span><span class=w>
+</span></span></span></code></pre></div><ul><li>Refresh pillar on the local minion:</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt-call saltutil.refresh_pillar
+</span></span><span class=line><span class=cl>local:
+</span></span><span class=line><span class=cl>    True
+</span></span></code></pre></div><p>The previous command is executed from the Salt minion server. When executing from the master side, the equivalent command is: <code>$ sudo salt 'ip-172-31-11-15' saltutil.refresh_pillar</code>.</p><ul><li>Check that the minion has the right data:</li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=l>$ sudo salt-call pillar.get napalm:install</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=nt>local</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-junos</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-iosxr</span><span class=w>
+</span></span></span></code></pre></div><ul><li><p>If you have installed the <code>napalm-install-formula</code> correctly, you should be able to execute: <code>$ sudo salt-call state.show_sls napalm_install</code>. Otherwise, make sure you have the <a href=https://github.com/saltstack-formulas/napalm-install-formula/blob/master/napalm_install/map.jinja>map.jinja</a> and <a href=https://github.com/saltstack-formulas/napalm-install-formula/blob/master/napalm_install/init.sls>init.sls</a> in a directory called <code>napalm_install</code>, under one of the paths listed as <a href=https://docs.saltstack.com/en/latest/ref/configuration/master.html#file-roots><code>file_roots</code></a> in the master configuration.</p></li><li><p>Execute a dry run and check the output (this step is not mandatory, but it is a good practice):</p></li></ul><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt-call state.sls napalm_install <span class=nv>test</span><span class=o>=</span>True
+</span></span><span class=line><span class=cl>local:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_junos_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: None
+</span></span><span class=line><span class=cl>     Comment: The following packages would be installed/updated: libssl-dev, python-cffi, libxslt1-dev, libffi-dev, python-dev
+</span></span><span class=line><span class=cl>     Started: 11:45:03.200592
+</span></span><span class=line><span class=cl>    Duration: 332.72 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-junos
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: None
+</span></span><span class=line><span class=cl>     Comment: Python package napalm-junos is <span class=nb>set</span> to be installed
+</span></span><span class=line><span class=cl>     Started: 11:45:03.775327
+</span></span><span class=line><span class=cl>    Duration: 974.406 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_iosxr_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: None
+</span></span><span class=line><span class=cl>     Comment: The following packages would be installed/updated: libssl-dev, python-cffi, python-dev, libffi-dev
+</span></span><span class=line><span class=cl>     Started: 11:45:04.749919
+</span></span><span class=line><span class=cl>    Duration: 9.268 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-iosxr
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: None
+</span></span><span class=line><span class=cl>     Comment: Python package napalm-iosxr is <span class=nb>set</span> to be installed
+</span></span><span class=line><span class=cl>     Started: 11:45:04.759294
+</span></span><span class=line><span class=cl>    Duration: 957.672 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Summary <span class=k>for</span> <span class=nb>local</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Succeeded: <span class=m>4</span> <span class=o>(</span><span class=nv>unchanged</span><span class=o>=</span>4<span class=o>)</span>
+</span></span><span class=line><span class=cl>Failed:    <span class=m>0</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Total states run:     <span class=m>4</span>
+</span></span><span class=line><span class=cl>Total run time:   2.274 s
+</span></span></code></pre></div><p>The test mode tells us that there are several system packages to be installed, including <code>libxslt1-dev</code>, <code>libssl-dev</code> together with the NAPALM libraries from PyPi, using <code>pip</code>. As everything looks good, we can go ahead and install:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt-call state.sls napalm_install
+</span></span><span class=line><span class=cl>local:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_junos_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: <span class=m>5</span> targeted packages were installed/updated.
+</span></span><span class=line><span class=cl>              The following packages were already installed: python-pip, libxml2-dev
+</span></span><span class=line><span class=cl>     Started: 11:47:43.398503
+</span></span><span class=line><span class=cl>    Duration: 6123.864 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>              ----------
+</span></span><span class=line><span class=cl>              libffi-dev:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      3.1-2+deb8u1
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              libffi6:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      3.1-2+deb8u1
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>                      3.1-2+b2
+</span></span><span class=line><span class=cl>              libssl-dev:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      1.0.1t-1+deb8u6
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              libxslt-dev:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      <span class=m>1</span>
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              libxslt1-dev:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      1.1.28-2+deb8u3
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              python-cffi:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      0.8.6-1
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              python-dev:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      2.7.9-1
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>              python-dev:any:
+</span></span><span class=line><span class=cl>                  ----------
+</span></span><span class=line><span class=cl>                  new:
+</span></span><span class=line><span class=cl>                      <span class=m>1</span>
+</span></span><span class=line><span class=cl>                  old:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-junos
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All packages were successfully installed
+</span></span><span class=line><span class=cl>     Started: 11:47:50.485667
+</span></span><span class=line><span class=cl>    Duration: 2536.705 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>              ----------
+</span></span><span class=line><span class=cl>              napalm-junos<span class=o>==</span>0.11.0:
+</span></span><span class=line><span class=cl>                  Installed
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_iosxr_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All specified packages are already installed
+</span></span><span class=line><span class=cl>     Started: 11:47:53.023603
+</span></span><span class=line><span class=cl>    Duration: 4.962 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-iosxr
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All packages were successfully installed
+</span></span><span class=line><span class=cl>     Started: 11:47:53.028663
+</span></span><span class=line><span class=cl>    Duration: 4820.892 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>              ----------
+</span></span><span class=line><span class=cl>              napalm-iosxr<span class=o>==</span>0.5.1:
+</span></span><span class=line><span class=cl>                  Installed
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Summary <span class=k>for</span> <span class=nb>local</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Succeeded: <span class=m>4</span> <span class=o>(</span><span class=nv>changed</span><span class=o>=</span>2<span class=o>)</span>
+</span></span><span class=line><span class=cl>Failed:    <span class=m>0</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Total states run:     <span class=m>4</span>
+</span></span><span class=line><span class=cl>Total run time:  13.486 s
+</span></span></code></pre></div><p>The state execution correctly setup the environment for NAPALM and upgraded the system dependencies to the latest releases.</p><p>From here on, if we need to install another NAPALM driver, but we are unsure about its dependencies, we can simply append it to the install list (in the <code>napalm.sls</code> pillar), e.g.:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>napalm</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>install</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-junos</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-iosxr</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span>- <span class=l>napalm-panos</span><span class=w>
+</span></span></span></code></pre></div><p>Then execute the state:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt-call state.sls napalm_install
+</span></span><span class=line><span class=cl>local:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_junos_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All specified packages are already installed
+</span></span><span class=line><span class=cl>     Started: 11:52:17.193931
+</span></span><span class=line><span class=cl>    Duration: 323.716 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-junos
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: Python package napalm-junos was already installed
+</span></span><span class=line><span class=cl>              All packages were successfully installed
+</span></span><span class=line><span class=cl>     Started: 11:52:17.758566
+</span></span><span class=line><span class=cl>    Duration: 2528.329 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_iosxr_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All specified packages are already installed
+</span></span><span class=line><span class=cl>     Started: 11:52:20.287092
+</span></span><span class=line><span class=cl>    Duration: 5.199 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-iosxr
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: Python package napalm-iosxr was already installed
+</span></span><span class=line><span class=cl>              All packages were successfully installed
+</span></span><span class=line><span class=cl>     Started: 11:52:20.292391
+</span></span><span class=line><span class=cl>    Duration: 1452.512 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: install_napalm_panos_pkgs
+</span></span><span class=line><span class=cl>    Function: pkg.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All specified packages are already installed
+</span></span><span class=line><span class=cl>     Started: 11:52:21.745097
+</span></span><span class=line><span class=cl>    Duration: 5.286 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>----------
+</span></span><span class=line><span class=cl>          ID: napalm-panos
+</span></span><span class=line><span class=cl>    Function: pip.installed
+</span></span><span class=line><span class=cl>      Result: True
+</span></span><span class=line><span class=cl>     Comment: All packages were successfully installed
+</span></span><span class=line><span class=cl>     Started: 11:52:21.750481
+</span></span><span class=line><span class=cl>    Duration: 4880.599 ms
+</span></span><span class=line><span class=cl>     Changes:
+</span></span><span class=line><span class=cl>              ----------
+</span></span><span class=line><span class=cl>              napalm-panos<span class=o>==</span>0.4.0:
+</span></span><span class=line><span class=cl>                  Installed
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Summary <span class=k>for</span> <span class=nb>local</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Succeeded: <span class=m>6</span> <span class=o>(</span><span class=nv>changed</span><span class=o>=</span>1<span class=o>)</span>
+</span></span><span class=line><span class=cl>Failed:    <span class=m>0</span>
+</span></span><span class=line><span class=cl>------------
+</span></span><span class=line><span class=cl>Total states run:     <span class=m>6</span>
+</span></span><span class=line><span class=cl>Total run time:   9.196 s
+</span></span></code></pre></div><p>If you are running a large scale network and your proxy minions are distributed across multiple servers, the dependencies installation becomes very stright forward:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ sudo salt -N proxy-minions-servers state.sls napalm_install
+</span></span></code></pre></div><p>Where <code>proxy-minions-servers</code> is a <a href=https://docs.saltstack.com/en/latest/topics/targeting/nodegroups.html>node group</a> defined on the master, selecting the servers running the proxy processes.</p><h2 id=ensure-you-are-running-the-latest-versions>Ensure you are running the latest versions<a hidden class=anchor aria-hidden=true href=#ensure-you-are-running-the-latest-versions>#</a></h2><p>Using the <a href=https://docs.saltstack.com/en/latest/topics/jobs/>Salt schedule</a> subsystem, we can ensure the environment is always up to date, by scheduling the state to be executed at specific intervals. For example, the following minion configuration schedules the <code>napalm_install</code> state to be executed every Monday, at 10AM:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=line><span class=cl><span class=nt>schedule</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>  </span><span class=nt>napalm_env</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>function</span><span class=p>:</span><span class=w> </span><span class=l>state.sls</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>arg</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span>- <span class=l>napalm_install</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>    </span><span class=nt>when</span><span class=p>:</span><span class=w>
+</span></span></span><span class=line><span class=cl><span class=w>      </span>- <span class=l>Monday 10:00am</span><span class=w>
+</span></span></span></code></pre></div><h2 id=conclusions>Conclusions<a hidden class=anchor aria-hidden=true href=#conclusions>#</a></h2><p>Although there are some additional steps to get the formula up and running, on the long run this method will turn to be very handy and a good way to maintain your environment updated. In the NAPALM community, we have agreed to release bugfixes and feature releases as often as possible, so most of the time upgrading to the latest version will probably help. So why not use the <a href=https://docs.saltstack.com/en/latest/topics/jobs/>Salt schedule</a> to execute the <code>napalm_install</code> state periodically and ensure your environment is always running the latest versions.</p></div><footer class=post-footer><ul class=post-tags></ul><nav class=paginav><a class=prev href=http://localhost:1313/2017-10-19-event-driven-network-automation/><span class=title>« Prev</span>
+<span>Event-driven network automation</span>
+</a><a class=next href=http://localhost:1313/2017-05-24-salt-napalm-chatops/><span class=title>Next »</span>
+<span>Chatops using Salt and NAPALM</span></a></nav></footer></article></main><footer class=footer><span>&copy; 2026 <a href=http://localhost:1313/>Mircea Ulinic</a></span> ·
+<span>Powered by
+<a href="https://gohugo.io/?utm_source=papermod" rel=noopener target=_blank>Hugo</a> &
+<a href=https://github.com/adityatelange/hugo-PaperMod/ rel=noopener target=_blank>PaperMod</a></span></footer><a href=#top id=top-link class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey=g><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+</a><script>let menu=document.getElementById("menu");if(menu){const e=localStorage.getItem("menu-scroll-position");e&&(menu.scrollLeft=parseInt(e,10)),menu.onscroll=function(){localStorage.setItem("menu-scroll-position",menu.scrollLeft)}}document.querySelectorAll('a[href^="#"]').forEach(e=>{e.addEventListener("click",function(e){e.preventDefault();var t=this.getAttribute("href").substr(1);window.matchMedia("(prefers-reduced-motion: reduce)").matches?document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView():document.querySelector(`[id='${decodeURIComponent(t)}']`).scrollIntoView({behavior:"smooth"}),t==="top"?history.replaceState(null,null," "):history.pushState(null,null,`#${t}`)})})</script><script>var toplink=document.getElementById("top-link");window.onscroll=function(){const e=window.innerHeight;document.body.scrollTop>e||document.documentElement.scrollTop>e?toplink.classList.remove("hidden"):toplink.classList.add("hidden")}</script><script>document.getElementById("theme-toggle").addEventListener("click",()=>{const e=document.querySelector("html");e.dataset.theme==="dark"?(e.dataset.theme="light",localStorage.setItem("pref-theme","light")):(e.dataset.theme="dark",localStorage.setItem("pref-theme","dark"))})</script><script>document.querySelectorAll("pre > code").forEach(e=>{const n=e.parentNode.parentNode,t=document.createElement("button");t.classList.add("copy-code"),t.innerHTML="copy";function s(){t.innerHTML="copied!",setTimeout(()=>{t.innerHTML="copy"},2e3)}t.addEventListener("click",t=>{if("clipboard"in navigator){navigator.clipboard.writeText(e.textContent),s();return}const n=document.createRange();n.selectNodeContents(e);const o=window.getSelection();o.removeAllRanges(),o.addRange(n);try{document.execCommand("copy"),s()}catch{}o.removeRange(n)}),n.classList.contains("highlight")?n.appendChild(t):n.parentNode.firstChild==n||(e.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName=="TABLE"?e.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(t):e.parentNode.appendChild(t))})</script></body></html>

@@ -1,0 +1,22 @@
+/* Small, deliberate PaperMod adjustments. Keep the theme upstream. */
+
+:root {
+  --main-width: 760px;
+  --gap: 24px;
+}
+
+.post-content {
+  line-height: 1.72;
+}
+
+.post-content pre code {
+  font-size: 0.9em;
+}
+
+.first-entry {
+  min-height: auto;
+}
+
+.social-icons a {
+  margin-right: 8px;
+}
