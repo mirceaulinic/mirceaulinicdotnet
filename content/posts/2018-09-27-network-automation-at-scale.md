@@ -4,7 +4,7 @@ date: '2018-09-27'
 draft: false
 url: /2018-09-27-network-automation-at-scale/
 cover:
-  image: /img/scale.jpg
+  image: /img/scale.jpeg
   alt: Network automation using Salt for large scale deployments
   relative: false
 ---
