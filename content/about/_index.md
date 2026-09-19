@@ -34,7 +34,7 @@ cool. I contributed to projects such as
 [NAPALM](https://github.com/napalm-automation/napalm) and Salt, and was
 involved in building some of the tooling and community around them. I was
 awarded SaltStack Contributor of the Year in 2017. I'm also the author of
-[Network Automation at Scale](https://www.oreilly.com/library/view/network-automation-at/9781492054708/)
+[Network Automation at Scale](https://www.oreilly.com/library/view/network-automation-at/9781491992524/)
 from O'Reilly. See [Projects](/projects/) for more (public) projects I've
 worked on.
 

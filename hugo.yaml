@@ -73,14 +73,22 @@ menu:
       name: Projects
       url: /projects/
       weight: 20
+    - identifier: workshops
+      name: Workshops
+      url: /workshops.xml
+      weight: 30
     - identifier: about
       name: About
       url: /about/
-      weight: 30
+      weight: 40
     - identifier: github
       name: GitHub
       url: https://github.com/mirceaulinic
-      weight: 40
+      weight: 50
+    - identifier: gpg
+      name: Public Key
+      url: /gpg/
+      weight: 60
 
 outputs:
   home:
