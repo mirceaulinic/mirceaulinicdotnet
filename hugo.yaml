@@ -59,7 +59,7 @@ params:
     hidden: false
 
   editPost:
-    URL: "https://github.com/mirceaulinic/mirceaulinic.github.io/edit/main/"
+    URL: "https://github.com/mirceaulinic/mirceaulinicdotnet/edit/main/"
     Text: "Suggest an edit"
     appendFilePath: true
 

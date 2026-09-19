@@ -1,3 +1,4 @@
+---
 title: GPG Public Key
 layout: single
 ---
