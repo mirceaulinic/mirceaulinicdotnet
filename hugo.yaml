@@ -50,6 +50,7 @@ params:
       url: "/index.xml"
 
   assets:
+    favicon: "/favicon.png"
     disableHLJS: false
     disableFingerprinting: false
 
@@ -59,7 +60,7 @@ params:
     hidden: false
 
   editPost:
-    URL: "https://github.com/mirceaulinic/mirceaulinicdotnet/edit/main/"
+    URL: "https://github.com/mirceaulinic/mirceaulinicdotnet/edit/main/content"
     Text: "Suggest an edit"
     appendFilePath: true
 
